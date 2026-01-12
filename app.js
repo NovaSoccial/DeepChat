@@ -1,8 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 1. Firebase Yapılandırman
 const firebaseConfig = {
     apiKey: "AIzaSyBA1H0C7y4Cbt2ZUBtGRnvu-HgPv8F-iog", 
     authDomain: "novasoccial.firebaseapp.com",
@@ -16,85 +15,50 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// 2. Robot Kontrolü (Görünmez Recaptcha)
-window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-    'size': 'invisible'
-});
+window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { 'size': 'invisible' });
 
-// 3. SMS KODU GÖNDERME
+// 1. TÜRKİYE FİLTRELİ GİRİŞ
 window.login = async () => {
-    const phoneNumber = document.getElementById('phoneInput').value; // Örn: +90530...
-    const appVerifier = window.recaptchaVerifier;
+    const phone = document.getElementById('phoneInput').value;
+    if (!phone.startsWith("+90")) {
+        alert("Sadece Türkiye numaraları kabul edilmektedir!");
+        return;
+    }
 
     try {
-        const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+        const confirmationResult = await signInWithPhoneNumber(auth, phone, window.recaptchaVerifier);
         window.confirmationResult = confirmationResult;
-        
-        // Numara girişini gizle, kod girişini göster
-        const code = prompt("Telefonuna gelen 6 haneli SMS kodunu gir:");
+        const code = prompt("SMS Kodunu Girin:");
         if (code) {
-            verifyCode(code);
+            const result = await confirmationResult.confirm(code);
+            // Kayıt Logu (Admin Paneli İçin) [cite: 2026-01-11]
+            await setDoc(doc(db, "users", result.user.uid), {
+                phone: result.user.phoneNumber,
+                joined: serverTimestamp()
+            });
+            document.getElementById('login-box').style.display = 'none';
+            document.getElementById('main-screen').style.display = 'flex';
         }
-    } catch (error) {
-        console.error("SMS Gönderilemedi:", error);
-        alert("Hata: " + error.message);
-    }
+    } catch (err) { alert("Hata: " + err.message); }
 };
 
-// 4. KODU DOĞRULAMA VE GİRİŞ
-async function verifyCode(code) {
-    try {
-        const result = await window.confirmationResult.confirm(code);
-        const user = result.user;
-        console.log("Giriş Başarılı!", user.uid);
-        
-        // Arayüzü Değiştir
-        document.getElementById('login-box').style.display = 'none';
-        document.getElementById('main-chat').style.display = 'flex';
-        
-        initChat(); // Mesajları yükle
-    } catch (error) {
-        alert("Kod hatalı veya süresi dolmuş!");
-    }
-}
-
-// 5. ŞİFRELİ MESAJ GÖNDERME
-window.sendMessage = async () => {
-    const input = document.getElementById('msgInput');
-    const DEEP_KEY = "Deep_Secure_Key_2026"; // Gizli şifreleme anahtarı
-
-    if(input.value) {
-        // Arka planda şifrele (DeepChat Zırhı)
-        const encrypted = CryptoJS.AES.encrypt(input.value, DEEP_KEY).toString();
-
-        await addDoc(collection(db, "deep_messages"), {
-            text: encrypted,
-            sender: auth.currentUser.phoneNumber,
-            timestamp: serverTimestamp()
-        });
-        input.value = "";
-    }
-};
-
-// 6. MESAJLARI ANLIK DİNLEME
-function initChat() {
-    const q = query(collection(db, "deep_messages"), orderBy("timestamp"));
-    onSnapshot(q, (snapshot) => {
-        const display = document.getElementById('messages');
-        display.innerHTML = "";
-        snapshot.forEach((doc) => {
-            const msg = doc.data();
-            const DEEP_KEY = "Deep_Secure_Key_2026";
-            
-            // Şifreyi sadece senin telefonun çözer
-            const bytes = CryptoJS.AES.decrypt(msg.text, DEEP_KEY);
-            const originalText = bytes.toString(CryptoJS.enc.Utf8);
-
-            const div = document.createElement('div');
-            div.className = msg.sender === auth.currentUser.phoneNumber ? 'msg sent' : 'msg received';
-            div.innerText = originalText;
-            display.appendChild(div);
-        });
-        display.scrollTop = display.scrollHeight;
+// 2. SEKME DEĞİŞTİRME MANTIĞI
+window.switchTab = (tabName) => {
+    const tabs = ['sohbetler', 'durumlar', 'kanallar', 'aramalar'];
+    tabs.forEach(t => {
+        document.getElementById('tab-' + t).style.display = 'none';
     });
-}
+    document.getElementById('tab-' + tabName).style.display = 'block';
+
+    // FAB İkonunu Değiştir
+    const fabIcon = document.getElementById('fab-icon');
+    if(tabName === 'sohbetler') fabIcon.innerText = "💬";
+    else if(tabName === 'durumlar') fabIcon.innerText = "📷";
+    else if(tabName === 'aramalar') fabIcon.innerText = "📞";
+};
+
+// 3. FAB BUTONU AKSİYONU (Grup Kurma / Rehber)
+window.handleFabAction = () => {
+    const currentTab = document.querySelector('.nav-item.active span').innerText;
+    alert(currentTab + " için işlem başlatılıyor... Rehber taranıyor.");
+};
