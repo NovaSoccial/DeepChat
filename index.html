@@ -2,37 +2,72 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeepChat - Ultra Secure</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DeepChat</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div id="login-box" class="container">
-        <h1>DeepChat</h1>
-        <p>Sadece telefon numaranla gizli dünyaya katıl.</p>
-        <input type="tel" id="phoneInput" placeholder="+90 5xx xxx xx xx">
-        <button onclick="login()">Güvenli Giriş</button>
+        <h1 class="brand-logo">DeepChat</h1>
+        <p>Sadece Türkiye (+90) numaraları kabul edilir.</p>
+        <div class="input-group">
+            <input type="tel" id="phoneInput" value="+90" placeholder="+90">
+        </div>
+        <button onclick="login()" class="btn-primary">KOD GÖNDER</button>
         <div id="recaptcha-container"></div>
     </div>
 
-    <div id="main-chat" class="container" style="display: none;">
-        <div class="header">
-            <span>DeepChat 🔒</span>
-            <button onclick="startVideoCall()" class="call-btn">📹 Görüntülü Ara</button>
+    <div id="main-screen" class="container" style="display: none;">
+        <div class="app-header">
+            <span class="app-title">DeepChat</span>
+            <div class="header-tools">
+                <span onclick="openCamera()">📷</span>
+                <span>🔍</span>
+                <span onclick="toggleMenu()">⋮</span>
+            </div>
         </div>
 
-        <div id="video-area">
-            <video id="localVideo" autoplay muted playsinline></video>
-            <video id="remoteVideo" autoplay playsinline></video>
-        </div>
-
-        <div id="messages">
+        <div id="content-display" class="scroll-area">
+            <div id="tab-sohbetler" class="tab-content">
+                <div class="filter-bar">
+                    <button class="active">Tümü</button>
+                    <button>Okunmamış</button>
+                    <button>Gruplar</button>
+                </div>
+                <div id="chat-list">
+                    </div>
             </div>
 
-        <div class="input-area">
-            <input type="text" id="msgInput" placeholder="Zırhlı mesaj gönder...">
-            <button onclick="sendMessage()">➤</button>
+            <div id="tab-durumlar" class="tab-content" style="display:none;">
+                <div class="status-header">Durum</div>
+                <div class="status-my">
+                    <div class="user-img-small">+</div>
+                    <div class="user-info"><strong>Durumum</strong><span>Durum eklemek için dokunun</span></div>
+                </div>
+                <div class="status-updates">Son güncellemeler</div>
+            </div>
+
+            <div id="tab-kanallar" class="tab-content" style="display:none;">
+                <div class="status-header">Kanallar</div>
+                <p style="padding:15px; color:#8696a0;">İlgilendiğiniz konuları takip etmek için kanalları bulun.</p>
+            </div>
+
+            <div id="tab-aramalar" class="tab-content" style="display:none;">
+                <div class="status-header">Aramalar</div>
+                <div class="call-log">Henüz arama kaydı yok.</div>
+            </div>
+        </div>
+
+        <div class="fab" id="main-fab" onclick="handleFabAction()">
+            <span id="fab-icon">💬</span>
+        </div>
+
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="switchTab('sohbetler')"><i>💬</i><span>Sohbetler</span></div>
+            <div class="nav-item" onclick="switchTab('durumlar')"><i>⭕</i><span>Durum</span></div>
+            <div class="nav-item" onclick="switchTab('kanallar')"><i>📢</i><span>Kanallar</span></div>
+            <div class="nav-item" onclick="switchTab('aramalar')"><i>📞</i><span>Aramalar</span></div>
         </div>
     </div>
 
