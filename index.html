@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepChat - Ultra Secure</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="login-box" class="container">
+        <h1>DeepChat</h1>
+        <p>Sadece telefon numaranla gizli dünyaya katıl.</p>
+        <input type="tel" id="phoneInput" placeholder="+90 5xx xxx xx xx">
+        <button onclick="login()">Güvenli Giriş</button>
+        <div id="recaptcha-container"></div>
+    </div>
+
+    <div id="main-chat" class="container" style="display: none;">
+        <div class="header">
+            <span>DeepChat 🔒</span>
+            <button onclick="startVideoCall()" class="call-btn">📹 Görüntülü Ara</button>
+        </div>
+
+        <div id="video-area">
+            <video id="localVideo" autoplay muted playsinline></video>
+            <video id="remoteVideo" autoplay playsinline></video>
+        </div>
+
+        <div id="messages">
+            </div>
+
+        <div class="input-area">
+            <input type="text" id="msgInput" placeholder="Zırhlı mesaj gönder...">
+            <button onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
