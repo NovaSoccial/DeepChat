@@ -2,76 +2,60 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DeepChat</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepChat | Giriş Yap</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: #1e293b; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; width: 320px; }
+        h2 { color: #38bdf8; margin-bottom: 1.5rem; }
+        input { width: 100%; padding: 12px; margin-bottom: 1rem; border: none; border-radius: 8px; outline: none; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #38bdf8; border: none; border-radius: 8px; color: #0f172a; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #0ea5e9; }
+        .info { font-size: 0.8rem; color: #94a3b8; margin-top: 1rem; }
+    </style>
 </head>
 <body>
 
-    <div id="login-box" class="container">
-        <h1 class="brand-logo">DeepChat</h1>
-        <p>Sadece Türkiye (+90) numaraları kabul edilir.</p>
-        <div class="input-group">
-            <input type="tel" id="phoneInput" value="+90" placeholder="+90">
-        </div>
-        <button onclick="login()" class="btn-primary">KOD GÖNDER</button>
-        <div id="recaptcha-container"></div>
-    </div>
+<div class="container">
+    <h2>DeepChat</h2>
+    <p>Giriş yapmak için numaranızı girin.</p>
+    <input type="tel" id="phoneInput" placeholder="Örn: 05551234567" required>
+    <button onclick="gonderVeYonlendir()">Kod Al</button>
+    <div class="info">Kodunuz Telegram üzerinden gönderilecektir.</div>
+</div>
 
-    <div id="main-screen" class="container" style="display: none;">
-        <div class="app-header">
-            <span class="app-title">DeepChat</span>
-            <div class="header-tools">
-                <span onclick="openCamera()">📷</span>
-                <span>🔍</span>
-                <span onclick="toggleMenu()">⋮</span>
-            </div>
-        </div>
+<script>
+async function gonderVeYonlendir() {
+    const telefon = document.getElementById('phoneInput').value;
+    // SENİN YENİ EXEC LİNKİN BURAYA GELECEK:
+    const scriptURL = "https://script.google.com/macros/s/AKfycbwM22GVVbUXY_9uHRK1Cpe3hsnV1NsxOUn6ENA4wZHsj_KKca8HO6vpQOjg3efqJKH-/exec";
 
-        <div id="content-display" class="scroll-area">
-            <div id="tab-sohbetler" class="tab-content">
-                <div class="filter-bar">
-                    <button class="active">Tümü</button>
-                    <button>Okunmamış</button>
-                    <button>Gruplar</button>
-                </div>
-                <div id="chat-list">
-                    </div>
-            </div>
+    if (telefon.length < 10) {
+        alert("Lütfen geçerli bir numara girin!");
+        return;
+    }
 
-            <div id="tab-durumlar" class="tab-content" style="display:none;">
-                <div class="status-header">Durum</div>
-                <div class="status-my">
-                    <div class="user-img-small">+</div>
-                    <div class="user-info"><strong>Durumum</strong><span>Durum eklemek için dokunun</span></div>
-                </div>
-                <div class="status-updates">Son güncellemeler</div>
-            </div>
+    try {
+        // Veriyi Google Tablo'ya gönderiyoruz
+        await fetch(scriptURL, {
+            method: 'POST',
+            mode: 'no-cors',
+            cache: 'no-cache',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ numara: telefon })
+        });
 
-            <div id="tab-kanallar" class="tab-content" style="display:none;">
-                <div class="status-header">Kanallar</div>
-                <p style="padding:15px; color:#8696a0;">İlgilendiğiniz konuları takip etmek için kanalları bulun.</p>
-            </div>
+        alert("Talebiniz alındı! Şimdi Telegram botuna gidip numaranızı yazarak kodunuzu alabilirsiniz.");
+        
+        // Kullanıcıyı Telegram botuna yönlendiriyoruz (Kendi bot linkini yaz)
+        window.location.href = "https://t.me/DeepChattBot"; 
 
-            <div id="tab-aramalar" class="tab-content" style="display:none;">
-                <div class="status-header">Aramalar</div>
-                <div class="call-log">Henüz arama kaydı yok.</div>
-            </div>
-        </div>
+    } catch (error) {
+        console.error('Hata:', error);
+        alert("Bir sorun oluştu. Lütfen tekrar deneyin.");
+    }
+}
+</script>
 
-        <div class="fab" id="main-fab" onclick="handleFabAction()">
-            <span id="fab-icon">💬</span>
-        </div>
-
-        <div class="bottom-nav">
-            <div class="nav-item active" onclick="switchTab('sohbetler')"><i>💬</i><span>Sohbetler</span></div>
-            <div class="nav-item" onclick="switchTab('durumlar')"><i>⭕</i><span>Durum</span></div>
-            <div class="nav-item" onclick="switchTab('kanallar')"><i>📢</i><span>Kanallar</span></div>
-            <div class="nav-item" onclick="switchTab('aramalar')"><i>📞</i><span>Aramalar</span></div>
-        </div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <script type="module" src="app.js"></script>
 </body>
 </html>
