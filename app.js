@@ -1,91 +1,99 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+const DB_URL = "https://deepchat-d84d7-default-rtdb.firebaseio.com/users.json";
 
-// Firebase Yapılandırman [cite: 2026-01-08]
-const firebaseConfig = {
-    apiKey: "AIzaSyBA1H0C7y4Cbt2ZUBtGRnvu-HgPv8F-iog", 
-    authDomain: "novasoccial.firebaseapp.com",
-    projectId: "novasoccial",
-    storageBucket: "novasoccial.firebasestorage.app",
-    messagingSenderId: "680106218526",
-    appId: "1:680106218526:web:0edcdbe46ff1c84582ca0f"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-// reCAPTCHA Kurulumu (SMS için şart) [cite: 2026-01-12]
-window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-    'size': 'normal', // Ekranda 'Ben robot değilim' kutusu görünür, SMS'i tetikler [cite: 2026-01-12]
-    'callback': (response) => { console.log("reCAPTCHA doğrulandı."); }
-});
-
-// CANLI SMS GÖNDERME VE GİRİŞ [cite: 2026-01-12]
-window.login = async () => {
-    const phone = document.getElementById('phoneInput').value;
-
-    // 🛡️ GÜVENLİK: Sadece Türkiye (+90) numaralarına izin ver [cite: 2026-01-12]
-    if (!phone.startsWith("+90")) {
-        alert("DeepChat şu an sadece Türkiye numaraları (+90) için aktiftir. Diğerleri engellendi."); [cite: 2026-01-12]
-        return;
-    }
-
-    const verifier = window.recaptchaVerifier;
+// SİSTEME GİRİŞ
+async function sistemeGiris() {
+    const key = document.getElementById('master-key-input').value;
+    const err = document.getElementById('login-error');
+    if(!key) { err.innerText = "Lütfen anahtarınızı girin!"; return; }
 
     try {
-        const confirmationResult = await signInWithPhoneNumber(auth, phone, verifier);
-        window.confirmationResult = confirmationResult;
-        
-        const code = prompt("Telefonunuza gelen 6 haneli doğrulama kodunu giriniz:");
-        if (code) {
-            const result = await confirmationResult.confirm(code);
-            const user = result.user;
+        const res = await fetch(DB_URL);
+        const users = await res.json();
+        let valid = false;
+        for (let i in users) { if (users[i].masterKey === key) { valid = true; break; } }
 
-            // 📝 ADMIN LOG: Giriş yapanı veritabanına kaydet (Senin panelin için) [cite: 2026-01-11]
-            await setDoc(doc(db, "users", user.uid), {
-                phoneNumber: user.phoneNumber,
-                joinedAt: serverTimestamp(),
-                status: "active"
-            });
-
-            // Ekran değiştirme [cite: 2026-01-11]
-            document.getElementById('login-box').style.display = 'none';
-            document.getElementById('main-screen').style.display = 'flex';
-            console.log("DeepChat'e hoş geldiniz!");
+        if (valid) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'block';
+            tabDegistir('chats');
+        } else {
+            err.innerText = "Hatalı Anahtar! Lütfen bot üzerinden tekrar kontrol edin.";
         }
-    } catch (error) {
-        console.error("SMS Hatası:", error);
-        alert("SMS gönderilemedi! Lütfen numaranızı ve internet bağlantınızı kontrol edin."); [cite: 2026-01-12]
+    } catch(e) { err.innerText = "Bağlantı hatası!"; }
+}
+
+// SEKME DEĞİŞTİRME
+function tabDegistir(t) {
+    const main = document.getElementById('main-content');
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + t).classList.add('active');
+    
+    if(t === 'chats') {
+        main.innerHTML = `
+            <div class="user-item" onclick="sohbetAc('Ablam')">
+                <div class="user-avatar"><span class="material-icons">person</span></div>
+                <div class="user-info"><h4>Ablam</h4><p>Dokun ve mesaj gönder...</p></div>
+            </div>`;
+    } else {
+        main.innerHTML = `<div style="padding:50px; text-align:center; color:#8696a0;">Burada bir şey yok.</div>`;
     }
-};
+}
 
-// SEKME YÖNETİMİ (WhatsApp Tarzı) [cite: 2026-01-11]
-window.switchTab = (tabName) => {
-    // Tüm sekmeleri gizle
-    const tabs = ['sohbetler', 'durumlar', 'kanallar', 'aramalar'];
-    tabs.forEach(t => {
-        const el = document.getElementById('tab-' + t);
-        if (el) el.style.display = 'none';
+// SOHBETİ AÇ
+function sohbetAc(isim) {
+    const win = document.createElement('div');
+    win.className = 'chat-window';
+    win.innerHTML = `
+        <div class="chat-header">
+            <span class="material-icons" onclick="this.parentElement.parentElement.remove()">arrow_back</span>
+            <h4>${isim}</h4>
+        </div>
+        <div class="msg-area" id="msg-box">
+            <div class="msg received">Selam! DeepChat üzerinden mesajlaşabiliriz.</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="m-text" placeholder="Mesaj yaz...">
+            <span class="material-icons" style="color:#00a884; cursor:pointer;" onclick="gonder('${isim}')">send</span>
+        </div>`;
+    document.body.appendChild(win);
+}
+
+// MESAJ GÖNDER
+async function gonder(alici) {
+    const inp = document.getElementById('m-text');
+    const box = document.getElementById('msg-box');
+    if(!inp.value) return;
+
+    box.innerHTML += `<div class="msg sent">${inp.value}</div>`;
+    await fetch(`https://deepchat-d84d7-default-rtdb.firebaseio.com/messages/${alici}.json`, {
+        method: 'POST',
+        body: JSON.stringify({ text: inp.value, time: Date.now() })
     });
+    inp.value = "";
+    box.scrollTop = box.scrollHeight;
+}
 
-    // İlgili sekmeyi göster
-    const activeTab = document.getElementById('tab-' + tabName);
-    if (activeTab) activeTab.style.display = 'block';
+// REHBER KONTROLÜ
+async function rehberAc() {
+    try {
+        const contacts = await navigator.contacts.select(['name', 'tel'], {multiple: true});
+        const res = await fetch(DB_URL);
+        const users = await res.json();
+        const reg = Object.values(users).map(u => u.phone.replace(/\D/g,''));
 
-    // Alt menüdeki aktif sınıfını güncelle
-    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-    // (Burada DOM yapına göre ilgili nav-item'a active eklenmeli)
-
-    // Sağ alttaki butonun (FAB) ikonunu değiştir
-    const fabIcon = document.getElementById('fab-icon');
-    if (tabName === 'sohbetler') fabIcon.innerText = "💬";
-    else if (tabName === 'durumlar') fabIcon.innerText = "📷";
-    else if (tabName === 'aramalar') fabIcon.innerText = "📞";
-};
-
-// SAĞ ALT BUTON AKSİYONU [cite: 2026-01-11]
-window.handleFabAction = () => {
-    alert("Rehber taranıyor... DeepChat kullanıcıları aranıyor.");
-};
+        let html = '<div style="background:#0b141a; min-height:100vh;">';
+        contacts.forEach(c => {
+            let p = c.tel[0].replace(/\D/g,'');
+            let using = reg.includes(p);
+            html += `
+                <div class="user-item">
+                    <div class="user-avatar">${c.name[0][0]}</div>
+                    <div class="user-info">
+                        <h4>${c.name[0]}</h4>
+                        <p class="${using ? '' : 'not-using'}">${using ? 'DeepChat Kullanıyor' : 'DeepChat kullanmıyor'}</p>
+                    </div>
+                </div>`;
+        });
+        document.getElementById('main-content').innerHTML = html + '</div>';
+    } catch(e) { alert("Rehber izni desteklenmiyor veya reddedildi."); }
+                }
