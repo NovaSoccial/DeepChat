@@ -2,60 +2,61 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeepChat | Giriş Yap</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: #1e293b; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; width: 320px; }
-        h2 { color: #38bdf8; margin-bottom: 1.5rem; }
-        input { width: 100%; padding: 12px; margin-bottom: 1rem; border: none; border-radius: 8px; outline: none; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #38bdf8; border: none; border-radius: 8px; color: #0f172a; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #0ea5e9; }
-        .info { font-size: 0.8rem; color: #94a3b8; margin-top: 1rem; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DeepChat | Güvenli Mesajlaşma</title>
+    <link rel="stylesheet" href="stil.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body>
+    <div id="login-screen">
+        <div class="login-box">
+            <span class="material-icons" style="font-size:70px; color:#00a884;">lock_person</span>
+            <h2 style="letter-spacing: 1px;">DEEPCHAT GİRİŞ</h2>
+            
+            <div class="security-info">
+                <p style="color: #00a884; font-weight: bold; margin-bottom: 10px;">⚠️ GÜVENLİK VE ERİŞİM BİLGİLENDİRMESİ</p>
+                DeepChat, kullanıcı gizliliğini en üst düzeyde tutmak amacıyla uçtan uca şifreli bir altyapı kullanır. Sisteme erişim sağlamak ve kimliğinizi doğrulamak için aşağıdaki adımları eksiksiz tamamlamanız gerekmektedir:
+                <br><br>
+                <b>ADIM ADIM ERİŞİM REHBERİ:</b>
+                <ul style="padding-left: 20px; margin-top: 10px; line-height: 1.6;">
+                    <li>Öncelikle Telegram uygulamasını açın ve resmi doğrulama botumuza gidin: 
+                        <br>
+                        <a href="https://t.me/DeepChattBot" target="_blank" style="color: #00a884; font-weight: bold; text-decoration: underline;">@DeepChattBot</a>
+                    </li>
+                    <li>Bot içerisindeki <b>"Numarayı Doğrula"</b> butonunu kullanarak sistem kaydınızı oluşturun.</li>
+                    <li>Doğrulama sonrası bot tarafından size özel olarak üretilen <b>Master Key</b> (Erişim Anahtarı) kodunu kopyalayın.</li>
+                    <li>Kopyaladığınız anahtarı aşağıdaki giriş alanına yapıştırarak güvenli tüneli aktif edin.</li>
+                </ul>
+                <p style="margin-top: 15px; font-size: 12px; opacity: 0.8;"><i>* Not: Bu anahtar sizin dijital imzanızdır. Güvenliğiniz için anahtarınızı kimseyle paylaşmayın.</i></p>
+            </div>
 
-<div class="container">
-    <h2>DeepChat</h2>
-    <p>Giriş yapmak için numaranızı girin.</p>
-    <input type="tel" id="phoneInput" placeholder="Örn: 05551234567" required>
-    <button onclick="gonderVeYonlendir()">Kod Al</button>
-    <div class="info">Kodunuz Telegram üzerinden gönderilecektir.</div>
-</div>
+            <input type="text" id="master-key-input" placeholder="MASTER KEY ANAHTARINIZI GİRİN">
+            <button onclick="sistemeGiris()">GİRİŞ YAP</button>
+            <p id="login-error" style="color:#ff3b30; font-size:13px; margin-top:10px;"></p>
+        </div>
+    </div>
 
-<script>
-async function gonderVeYonlendir() {
-    const telefon = document.getElementById('phoneInput').value;
-    // SENİN YENİ EXEC LİNKİN BURAYA GELECEK:
-    const scriptURL = "https://script.google.com/macros/s/AKfycbwM22GVVbUXY_9uHRK1Cpe3hsnV1NsxOUn6ENA4wZHsj_KKca8HO6vpQOjg3efqJKH-/exec";
+    <div id="app-screen" style="display: none;">
+        <header>
+            <div class="top-nav">
+                <span class="brand">DeepChat</span>
+                <div class="header-icons">
+                    <span class="material-icons">search</span>
+                    <span class="material-icons">more_vert</span>
+                </div>
+            </div>
+            <div class="tabs">
+                <div id="tab-chats" class="tab active" onclick="tabDegistir('chats')">SOHBETLER</div>
+                <div id="tab-status" class="tab" onclick="tabDegistir('status')">DURUMLAR</div>
+                <div id="tab-calls" class="tab" onclick="tabDegistir('calls')">ARAMALAR</div>
+            </div>
+        </header>
+        <main id="main-content"></main>
+        <button id="fab" onclick="rehberAc()">
+            <span class="material-icons" id="fab-icon">message</span>
+        </button>
+    </div>
 
-    if (telefon.length < 10) {
-        alert("Lütfen geçerli bir numara girin!");
-        return;
-    }
-
-    try {
-        // Veriyi Google Tablo'ya gönderiyoruz
-        await fetch(scriptURL, {
-            method: 'POST',
-            mode: 'no-cors',
-            cache: 'no-cache',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ numara: telefon })
-        });
-
-        alert("Talebiniz alındı! Şimdi Telegram botuna gidip numaranızı yazarak kodunuzu alabilirsiniz.");
-        
-        // Kullanıcıyı Telegram botuna yönlendiriyoruz (Kendi bot linkini yaz)
-        window.location.href = "https://t.me/DeepChattBot"; 
-
-    } catch (error) {
-        console.error('Hata:', error);
-        alert("Bir sorun oluştu. Lütfen tekrar deneyin.");
-    }
-}
-</script>
-
+    <script src="uygulama.js"></script>
 </body>
-</html>
+                </html>
